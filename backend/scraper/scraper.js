@@ -9,29 +9,27 @@ const scrapeNews = async () => {
   const stories = [];
 
   $(".athing").each((i, el) => {
-    if (i < 10) {
-      const title = $(el).find(".titleline a").text();
-      const url = $(el).find(".titleline a").attr("href");
-      const subtext = $(el).next();
-      const points = subtext.find(".score").text();
-      const author = subtext.find(".hnuser").text();
-      const postedAt = subtext.find(".age").text();
+    if (stories.length >= 10) return false;
 
-      stories.push({ title, url, points, author, postedAt });
-    }
+    const title = $(el).find(".titleline a").first().text().trim();
+    const url = $(el).find(".titleline a").first().attr("href");
+
+    if (!title || !url) return;
+
+    const subtext = $(el).next();
+    const points = subtext.find(".score").text().trim();
+    const author = subtext.find(".hnuser").text().trim();
+    const postedAt =
+      subtext.find(".age").attr("title") ||
+      subtext.find(".age").text().trim();
+
+    stories.push({ title, url, points, author, postedAt });
   });
 
-  // Upsert — url se match karo, naya ho toh insert, purana ho toh update
-  const ops = stories.map((story) => ({
-    updateOne: {
-      filter: { url: story.url },
-      update: { $set: { ...story, updatedAt: new Date() } },
-      upsert: true,
-    },
-  }));
+  await Story.deleteMany({});
+  await Story.insertMany(stories);
 
-  await Story.bulkWrite(ops);
-  console.log(`[Scraper] ${stories.length} stories upserted at`, new Date().toLocaleTimeString());
+  console.log(`[Scraper] ${stories.length} stories saved at`, new Date().toLocaleTimeString());
   return stories;
 };
 
