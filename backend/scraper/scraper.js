@@ -12,9 +12,7 @@ const scrapeNews = async () => {
     if (i < 10) {
       const title = $(el).find(".titleline a").text();
       const url = $(el).find(".titleline a").attr("href");
-
       const subtext = $(el).next();
-
       const points = subtext.find(".score").text();
       const author = subtext.find(".hnuser").text();
       const postedAt = subtext.find(".age").text();
@@ -23,9 +21,17 @@ const scrapeNews = async () => {
     }
   });
 
-  await Story.deleteMany();
-  await Story.insertMany(stories);
+  // Upsert — url se match karo, naya ho toh insert, purana ho toh update
+  const ops = stories.map((story) => ({
+    updateOne: {
+      filter: { url: story.url },
+      update: { $set: { ...story, updatedAt: new Date() } },
+      upsert: true,
+    },
+  }));
 
+  await Story.bulkWrite(ops);
+  console.log(`[Scraper] ${stories.length} stories upserted at`, new Date().toLocaleTimeString());
   return stories;
 };
 

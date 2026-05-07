@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const storySchema = new mongoose.Schema(
   {
     title: String,
-    url: String,
+    url: { type: String, unique: true },
     points: String,
     author: String,
     postedAt: String
