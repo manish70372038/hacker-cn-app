@@ -133,3 +133,28 @@ form button {
   color: #ef4444;
   border: 1px solid #ef4444;
 }
+/* Navbar Logout Button */
+.nav-logout {
+  background: #ef4444; /* Bright Red */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 15px;
+  font-size: 0.85rem;
+}
+
+.nav-logout:hover {
+  background: #dc2626; /* Darker Red on Hover */
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Logout icon styling (Optional: agar aap icon use kar rahe ho) */
+.nav-logout svg {
+  vertical-align: middle;
+  margin-right: 5px;
+}
