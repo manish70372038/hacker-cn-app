@@ -1,9 +1,8 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import Story from "../models/Story.js";
-import User from "../models/User.js"; // Zaroori hai bookmarks ke liye
+import User from "../models/User.js"; 
 
-// 1. Web Scraper Logic
 export const scrapeStories = async () => {
   try {
     console.log("Scraping started...");
@@ -25,18 +24,17 @@ export const scrapeStories = async () => {
     if (stories.length > 0) {
       await Story.deleteMany({}); 
       await Story.insertMany(stories);
-      console.log("✅ Success: Database updated with 10 fresh stories.");
+      console.log("Success: Database updated with 10 fresh stories.");
       return stories;
     }
   } catch (error) {
-    console.error("❌ Scraping Error:", error.message);
+    console.error("Scraping Error:", error.message);
   }
 };
 
 // 2. Get All Stories
 export const getStories = async (req, res) => {
   try {
-    // Points ke basis par descending order mein sort karna
     const stories = await Story.find().sort({ points: -1 });
     res.json(stories);
   } catch (error) {
@@ -44,7 +42,6 @@ export const getStories = async (req, res) => {
   }
 };
 
-// 3. Get Single Story
 export const getStory = async (req, res) => {
   try {
     const story = await Story.findById(req.params.id);
@@ -55,7 +52,6 @@ export const getStory = async (req, res) => {
   }
 };
 
-// 4. Toggle Bookmark
 export const toggleBookmark = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -64,10 +60,10 @@ export const toggleBookmark = async (req, res) => {
     const isBookmarked = user.bookmarks.includes(storyId);
 
     if (isBookmarked) {
-      // Remove bookmark
+    
       user.bookmarks = user.bookmarks.filter((id) => id.toString() !== storyId);
     } else {
-      // Add bookmark
+    
       user.bookmarks.push(storyId);
     }
 
@@ -78,7 +74,6 @@ export const toggleBookmark = async (req, res) => {
   }
 };
 
-// 5. Get Bookmarks (Iska hi error aa raha tha)
 export const getBookmarks = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate("bookmarks");
@@ -88,7 +83,6 @@ export const getBookmarks = async (req, res) => {
   }
 };
 
-// 6. Manual Scrape Trigger
 export const triggerScrape = async (req, res) => {
   try {
     const data = await scrapeStories();

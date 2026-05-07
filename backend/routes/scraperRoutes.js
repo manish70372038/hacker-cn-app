@@ -3,7 +3,7 @@ import scrapeNews from "../scraper/scraper.js";
 
 const router = express.Router();
 
-// Manual trigger — POST /api/scrap
+
 router.post("/", async (req, res) => {
   try {
     const data = await scrapeNews();
