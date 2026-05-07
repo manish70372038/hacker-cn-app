@@ -1,67 +1,49 @@
+import axios from "axios";
+import * as cheerio from "cheerio";
 import Story from "../models/Story.js";
-import User from "../models/User.js";
 
-export const getStories = async (req, res) => {
+export const scrapeStories = async () => {
   try {
-    const stories = await Story.find().sort({ points: -1 });
-    res.json(stories);
-  } catch (error) {
-    res.status(500).json({ msg: "Error fetching stories" });
-  }
-};
+    console.log("Scraping started...");
+    const { data } = await axios.get("https://news.ycombinator.com/");
+    const $ = cheerio.load(data);
+    const stories = [];
 
-export const getBookmarks = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).populate("bookmarks");
-    if (!user) {
-      return res.status(404).json({ msg: "User not found" });
-    }
-    res.json(user.bookmarks);
-  } catch (error) {
-    res.status(500).json({ msg: "Error fetching bookmarks" });
-  }
-};
+    // Hacker News ki top 10 stories nikalna
+    $(".athing").slice(0, 10).each((index, element) => {
+      const title = $(element).find(".titleline > a").text();
+      const url = $(element).find(".titleline > a").attr("href");
+      
+      // Subtext se baki info nikalna (points, author, time)
+      const subtext = $(element).next();
+      const points = subtext.find(".score").text() || "0 points";
+      const author = subtext.find(".hnuser").text() || "unknown";
+      const postedAt = subtext.find(".age").text() || "recently";
 
-export const getStory = async (req, res) => {
-  try {
-    const story = await Story.findById(req.params.id);
-    if (!story) {
-      return res.status(404).json({ msg: "Story not found" });
-    }
-    res.json(story);
-  } catch (error) {
-    res.status(500).json({ msg: "Error fetching story" });
-  }
-};
-
-export const toggleBookmark = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const storyId = req.params.id;
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ msg: "User not found" });
-    }
-
-    const exists = user.bookmarks.some(
-      (id) => id.toString() === storyId
-    );
-
-    if (exists) {
-      user.bookmarks = user.bookmarks.filter(
-        (id) => id.toString() !== storyId
-      );
-    } else {
-      user.bookmarks.push(storyId);
-    }
-
-    await user.save();
-    res.json({
-      msg: "Bookmark updated",
-      bookmarks: user.bookmarks,
+      stories.push({ title, url, points, author, postedAt });
     });
+
+    if (stories.length > 0) {
+      // CRITICAL STEP: Purana data delete karo taaki updatedAt fresh ho jaye
+      await Story.deleteMany({}); 
+      
+      // Naya fresh data insert karo
+      await Story.insertMany(stories);
+      
+      console.log("✅ Success: Database updated with 10 fresh stories.");
+      return stories;
+    }
   } catch (error) {
-    res.status(500).json({ msg: "Bookmark error" });
+    console.error("❌ Scraping Error:", error.message);
+  }
+};
+
+// API Trigger ke liye (POST /api/scrape)
+export const triggerScrape = async (req, res) => {
+  try {
+    const data = await scrapeStories();
+    res.status(200).json({ message: "Scraping successful", data });
+  } catch (error) {
+    res.status(500).json({ message: "Manual scraping failed" });
   }
 };
